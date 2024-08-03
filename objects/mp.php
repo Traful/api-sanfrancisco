@@ -55,6 +55,7 @@
 		}
 
 		public function setItem($values) {
+			/*
 			$client = new PreferenceClient();
 			$preference = $client->create(
 				[
@@ -78,6 +79,8 @@
 			$query = "INSERT INTO $this->table_name SET titulo = :titulo, cantidad = :cantidad, precio = :precio, idmp = :idmp, initpoint = :initpoint";
 			$values["idmp"] = $preference->id;
 			$values["initpoint"] = $preference->init_point;
+			*/
+			$query = "INSERT INTO $this->table_name SET titulo = :titulo, cantidad = :cantidad, precio = :precio";
 			parent::add($query, $values);
 			return $this;
 		}
@@ -94,7 +97,7 @@
 			parent::add($query, $v);
 			return $this;
 		}
-		
+
 		public function procesarPago($values) {
 			$result = new \stdClass();
 			$result->ok = true;

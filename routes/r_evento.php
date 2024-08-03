@@ -3,9 +3,15 @@
 
 use \Psr\Http\Message\ResponseInterface as Response;
 use \Psr\Http\Message\ServerRequestInterface as Request;
-//use \utils\Validate;
 use \Slim\Factory\AppFactory;
 
+use MercadoPago\MercadoPagoConfig;
+use MercadoPago\Client\Preference\PreferenceClient;
+
+
+require_once("objects/mp.php");
+require_once("objects/descuentos.php");
+require_once("objects/inscripciones.php");
 require_once("utils/validate.php");
 
 $app->post("/registrar/evento", function (Request $request, Response $response, array $args) {
@@ -38,96 +44,139 @@ $app->post("/registrar/evento", function (Request $request, Response $response, 
     $validacion = new Validate($this->get("db"));
     $validacion->validar($fields, $verificar);
 
-    $resp = null;
+    $resp = new \stdClass();
 
     if ($validacion->hasErrors()) {
         $resp = $validacion->getErrors();
     } else {
-        // carga de db
         try {
-            // Asumiendo que tienes una conexión a la base de datos
-            $db = $this->get('db');
+            $db = $this->get("db");
 
-            $query = "INSERT INTO inscripciones (
-                usuario_id, dni, nombre, apellido, fecha_nacimiento, genero, 
-                email, telefono, domicilio, ciudad, provincia, pais, 
-                codigo_postal, contacto_emergencia_nombre, contacto_emergencia_apellido, 
-                contacto_emergencia_telefono, talle_remera, team_agrupacion, 
-                categoria_edad, codigo_descuento, certificado_medico, tipo_mime, nombre_archivo, acepta_promocion
-            ) VALUES (
-                :usuario_id, :dni, :nombre, :apellido, :fecha_nacimiento, :genero,
-                :email, :telefono, :domicilio, :ciudad, :provincia, :pais,
-                :codigo_postal, :contacto_emergencia_nombre, :contacto_emergencia_apellido,
-                :contacto_emergencia_telefono, :talle_remera, :team_agrupacion,
-                :categoria_edad, :codigo_descuento, :certificado_medico, :tipo_mime, :nombre_archivo, :acepta_promocion
-            )";
+            $fields["usuario_id"] = $request->getAttribute("jwt")["data"]->id;
 
-            $stmt = $db->prepare($query);
+            //Buscar los datos del item seleccionado
+            $mp = new Mp($db);
+            $item = $mp->getItemById($fields["idItem"])->getResult();
+            $item = $item->data;
+            /*
+            $item->id
+            $item->titulo
+            $item->cantidad
+            $item->precio
+            */
 
-            // Bind de los parámetros
-            $stmt->bindParam(':usuario_id', $request->getAttribute('jwt')["data"]->id);
-            $stmt->bindParam(':dni', $fields['dni']);
-            $stmt->bindParam(':nombre', $fields['nombre']);
-            $stmt->bindParam(':apellido', $fields['apellido']);
-            $stmt->bindParam(':fecha_nacimiento', $fields['fecha_nacimiento']);
-            $stmt->bindParam(':genero', $fields['genero']);
-            $stmt->bindParam(':email', $fields['email']);
-            $stmt->bindParam(':telefono', $fields['telefono']);
-            $stmt->bindParam(':domicilio', $fields['domicilio']);
-            $stmt->bindParam(':ciudad', $fields['ciudad']);
-            $stmt->bindParam(':provincia', $fields['provincia']);
-            $stmt->bindParam(':pais', $fields['pais']);
-            $stmt->bindParam(':codigo_postal', $fields['codigo_postal']);
-            $stmt->bindParam(':contacto_emergencia_nombre', $fields['contacto_emergencia_nombre']);
-            $stmt->bindParam(':contacto_emergencia_apellido', $fields['contacto_emergencia_apellido']);
-            $stmt->bindParam(':contacto_emergencia_telefono', $fields['contacto_emergencia_telefono']);
-            $stmt->bindParam(':talle_remera', $fields['talle_remera']);
-            $stmt->bindParam(':team_agrupacion', $fields['team_agrupacion']);
-            $stmt->bindParam(':categoria_edad', $fields['categoria_edad']);
-            $stmt->bindParam(':codigo_descuento', $fields['codigo_descuento']);
+            $importe = floatval($item->precio);
+            $cubierto = false;
+
+            $descuentoData = new \stdClass();
+            $descuentoData->realizado = false;
+            $descuentoData->codigo = "";
+
+            //Buscar si tiene algun descuento
+            if(trim($fields["codigo_descuento"]) !== "") {
+                $codigo = trim($fields["codigo_descuento"]);
+                $des = new Descuentos($db);
+                $descuento = $des->getDescuentoByCodigo($codigo, true)->getResult();
+                if(!is_null($descuento->data) && ($descuento->data !== false)) {
+                    $descuento = $descuento->data;
+                    $importeDescuento = floatval($descuento->importe);
+                    $importe = $importe - $importeDescuento; //Se aplica el descuento a la preferencia
+                    if($importe === 0) {
+                        $cubierto = true;
+                    }
+                    $descuentoData->realizado = true;
+                    $descuentoData->codigo = $codigo;
+                } else {
+                    $fields["codigo_descuento"] .= " [X]";
+                    /*
+                        El código de descuento no es válido
+                        o bien ya no tiene diponibilidad
+                        Se cancela la carga o simplemente no se hace descuento
+                        y se continúa?
+                    */
+                    $resp->ok = false;
+                    $resp->msg = "Código de descuento suministrado no válido o deprecado.";
+                    $resp->errores = ["Código de descuento suministrado no válido o deprecado."];
+                    $response->getBody()->write(json_encode($resp));
+                    return $response->withHeader("Content-Type", "application/json")->withStatus(409);
+                }
+            }
+
+            $idPreferencia = "1";
+
+            if(!$cubierto) {
+                MercadoPagoConfig::setAccessToken($_ENV["MP_ACCESS_TOKEN"]);
+                //Generar una nueva preferencia
+                $client = new PreferenceClient();
+                $preference = $client->create(
+                    [
+                        "items" => array(
+                            array(
+                                "title" => $item->titulo,
+                                "quantity" => $item->cantidad,
+                                "unit_price" => $importe,
+                                "currency_id" => "ARS"
+                            )
+                        )
+
+                ]);
+                $preference->back_urls = array(
+                    "success" => "https://hans.net.ar/api-sanfrancisco/mp/success",
+                    "failure" => "https://hans.net.ar/failure",
+                    "pending" => "https://hans.net.ar/pending"
+                );
+                $preference->auto_return = "approved";
+                $preference->notification_url = "https://hans.net.ar/api-sanfrancisco/mp/notificaciones";
+
+                $idPreferencia = $preference->id;
+            }
+
+            $fields["idPago"] = $idPreferencia;
+            $fields["importe"] = $importe;
+            $fields["pagado"] = $cubierto;
 
             //Manejo del archivo de certificado médico
-            if (isset($uploadedFiles['certificadoMedico'])) {
-                $certificadoMedico = $uploadedFiles['certificadoMedico'];
-                if ($certificadoMedico->getError() === UPLOAD_ERR_OK) {
-                    $certificado_medico = $certificadoMedico->getStream()->getContents();
-                    $stmt->bindParam(':certificado_medico', $certificado_medico, PDO::PARAM_LOB);
-                    $name_archive = $certificadoMedico->getClientFilename();
-                    $type_archive = $certificadoMedico->getClientMediaType();
-                    $stmt->bindParam(':nombre_archivo', $name_archive, PDO::PARAM_STR);
-                    $stmt->bindParam(':tipo_mime', $type_archive, PDO::PARAM_STR);
-                } else {
-                    $stmt->bindParam(':certificado_medico', null, PDO::PARAM_NULL);
-                    $stmt->bindParam(':nombre_archivo', null, PDO::PARAM_NULL);
-                    $stmt->bindParam(':tipo_mime', null, PDO::PARAM_NULL);
+            $fields["certificado_medico"] = null;
+            $fields["nombre_archivo"] = null;
+            $fields["tipo_mime"] = null;
+            
+            if(isset($uploadedFiles["certificado_medico"])) {
+                if($uploadedFiles["certificado_medico"]->getError() === UPLOAD_ERR_OK) {
+                    $certificado_medico = $uploadedFiles["certificado_medico"]->getStream()->getContents();
+                    $fields["certificado_medico"] = $certificado_medico;
+                    $name_archive = $uploadedFiles["certificado_medico"]->getClientFilename();
+                    $type_archive = $uploadedFiles["certificado_medico"]->getClientMediaType();
+                    $fields["nombre_archivo"] = $name_archive;
+                    $fields["tipo_mime"] = $type_archive;
                 }
-            } else {
-                $stmt->bindParam(':certificado_medico', null, PDO::PARAM_NULL);
-                $stmt->bindParam(':nombre_archivo', null, PDO::PARAM_NULL);
-                $stmt->bindParam(':tipo_mime', null, PDO::PARAM_NULL);
             }
 
-            $acepta_promocion = isset($fields['aceptaImagen']) && $fields['aceptaImagen'] ? 1 : 0;
-            $stmt->bindParam(':acepta_promocion', $acepta_promocion);
+            $ins = new Inscripciones($db);
+            $resp = $ins->setInscripcion($fields)->getResult();
+            $resp->data["idPreferencia"] = $idPreferencia;
 
-            // Ejecutar la consulta
-            if ($stmt->execute()) {
-                $lastId  = $db->lastInsertId();
-                $response->getBody()->write(json_encode(['message' => 'Inscripción creada con éxito', 'id' =>  $lastId]));
-                return $response->withHeader('Content-Type', 'application/json')->withStatus(201);
-            } else {
-                throw new Exception("Error al ejecutar la consulta");
+            //Si la inscripción se realiza correctamente y se utilizo un descuento se actualzia su uso
+            if($descuentoData->realizado === true) {
+                $des = new Descuentos($db);
+                $des->descontarDisponibilidad($descuentoData->codigo);
             }
+            
         } catch (Exception $e) {
-            $response->getBody()->write(json_encode(['error' => $e->getMessage()]));
-            return $response->withHeader('Content-Type', 'application/json')->withStatus(500);
+            $resp->ok = false;
+            $resp->msg = $e->getMessage();
+            $resp->errores = [$e->getMessage()];
         }
     }
+
+    $response->getBody()->write(json_encode($resp));
+    return $response
+        ->withHeader("Content-Type", "application/json")
+        ->withStatus($resp->ok ? 200 : 409);
 });
 
 $app->put("/inscripcion/pago/{idIncripto}", function (Request $request, Response $response, array $args) {
-    $idIncripto = $args['idIncripto'];
-    $db = $this->get('db');
+    $idIncripto = $args["idIncripto"];
+    $db = $this->get("db");
     $fields = $request->getParsedBody();
 
 
@@ -135,12 +184,12 @@ $app->put("/inscripcion/pago/{idIncripto}", function (Request $request, Response
     $stmt = $db->prepare($query);
 
     // Bind de los parámetros
-    $stmt->bindParam(':idItem', $fields['idItem']);
-    $stmt->bindParam(':idPago', $fields['idPago']);
-    $stmt->bindParam(':id', $idIncripto);
+    $stmt->bindParam(":idItem", $fields["idItem"]);
+    $stmt->bindParam(":idPago", $fields["idPago"]);
+    $stmt->bindParam(":id", $idIncripto);
     if ($stmt->execute()) {
-        $response->getBody()->write(json_encode(['message' => 'Inscripcion updateada con exito']));
-        return $response->withHeader('Content-Type', 'application/json')->withStatus(200);
+        $response->getBody()->write(json_encode(["message" => "Inscripcion updateada con exito"]));
+        return $response->withHeader("Content-Type", "application/json")->withStatus(200);
     } else {
         throw new Exception("Error al ejecutar la consulta");
     }
@@ -148,28 +197,28 @@ $app->put("/inscripcion/pago/{idIncripto}", function (Request $request, Response
 
 
 $app->get("/ver/archivo/{id}", function (Request $request, Response $response, array $args) {
-    $id = $args['id'];
+    $id = $args["id"];
 
     // Asumiendo que tienes una conexión a la base de datos en $db
-    $db = $this->get('db');
+    $db = $this->get("db");
 
     // Consulta para obtener el archivo PDF
     $query = "SELECT certificado_medico, nombre_archivo, tipo_mime FROM inscripciones WHERE id =  :id";
     $stmt = $db->prepare($query);
-    $stmt->bindParam(':id', $id);
+    $stmt->bindParam(":id", $id);
     $stmt->execute();
     $archivo = $stmt->fetch(PDO::FETCH_ASSOC);
 
     if ($archivo) {
         // Establecer el tipo MIME y el nombre del archivo en los encabezados
-        $response = $response->withHeader('Content-Type', $archivo['tipo_mime']);
-        $response = $response->withHeader('Content-Disposition', 'inline; filename="' . $archivo['nombre_archivo'] . '"');
+        $response = $response->withHeader("Content-Type", $archivo["tipo_mime"]);
+        $response = $response->withHeader("Content-Disposition", "inline; filename='" . $archivo["nombre_archivo"] . "'");
 
         // Escribir el contenido del archivo en el cuerpo de la respuesta
-        $response->getBody()->write($archivo['certificado_medico']);
+        $response->getBody()->write($archivo["certificado_medico"]);
     } else {
         // Si el archivo no se encuentra, responder con un 404
-        $response = $response->withStatus(404)->withHeader('Content-Type', 'text/plain');
+        $response = $response->withStatus(404)->withHeader("Content-Type", "text/plain");
         $response->getBody()->write("Archivo no encontrado");
     }
 

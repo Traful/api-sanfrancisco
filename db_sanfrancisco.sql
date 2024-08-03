@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Servidor: 127.0.0.1:3306
--- Tiempo de generación: 03-08-2024 a las 13:00:04
+-- Tiempo de generación: 03-08-2024 a las 22:28:22
 -- Versión del servidor: 10.11.8-MariaDB-cll-lve
 -- Versión de PHP: 7.2.34
 
@@ -20,6 +20,26 @@ SET time_zone = "+00:00";
 --
 -- Base de datos: `u823308621_mp`
 --
+
+-- --------------------------------------------------------
+
+--
+-- Estructura de tabla para la tabla `descuentos`
+--
+
+CREATE TABLE `descuentos` (
+  `id` int(11) NOT NULL,
+  `codigo` varchar(50) NOT NULL,
+  `disponibilidad` int(11) NOT NULL,
+  `importe` double NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
+-- Volcado de datos para la tabla `descuentos`
+--
+
+INSERT INTO `descuentos` (`id`, `codigo`, `disponibilidad`, `importe`) VALUES
+(1, 'desc', 3, 500);
 
 -- --------------------------------------------------------
 
@@ -66,11 +86,13 @@ CREATE TABLE `inscripciones` (
   `categoria_edad` varchar(100) DEFAULT NULL,
   `codigo_descuento` varchar(50) DEFAULT NULL,
   `certificado_medico` blob DEFAULT NULL,
-  `tipo_mime` varchar(250) NOT NULL,
-  `nombre_archivo` varchar(250) NOT NULL,
+  `tipo_mime` varchar(250) DEFAULT NULL,
+  `nombre_archivo` varchar(250) DEFAULT NULL,
   `acepta_promocion` tinyint(1) DEFAULT NULL,
-  `idItem` int(11) DEFAULT NULL,
-  `idPago` varchar(100) DEFAULT NULL
+  `idItem` int(11) NOT NULL,
+  `idPago` varchar(100) NOT NULL,
+  `importe` double NOT NULL,
+  `pagado` tinyint(1) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------
@@ -83,18 +105,16 @@ CREATE TABLE `items` (
   `id` int(11) NOT NULL,
   `titulo` varchar(50) NOT NULL,
   `cantidad` int(11) NOT NULL,
-  `precio` double NOT NULL,
-  `idmp` varchar(250) NOT NULL,
-  `initpoint` varchar(250) NOT NULL
+  `precio` double NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
 -- Volcado de datos para la tabla `items`
 --
 
-INSERT INTO `items` (`id`, `titulo`, `cantidad`, `precio`, `idmp`, `initpoint`) VALUES
-(1, 'Quiero correr los 5k', 1, 12000, '57883365-73d78f05-2b0a-4b87-9425-5d5ebfee5125', 'https://www.mercadopago.com.ar/checkout/v1/redirect?pref_id=57883365-73d78f05-2b0a-4b87-9425-5d5ebfee5125'),
-(2, 'Quiero correr los 10k', 1, 15000, '57883365-4addc732-db7d-4d00-b376-50f8a17f6ae3', 'https://www.mercadopago.com.ar/checkout/v1/redirect?pref_id=57883365-4addc732-db7d-4d00-b376-50f8a17f6ae3');
+INSERT INTO `items` (`id`, `titulo`, `cantidad`, `precio`) VALUES
+(1, 'Quiero correr los 5k', 1, 12000),
+(2, 'Quiero correr los 10k', 1, 15000);
 
 -- --------------------------------------------------------
 
@@ -160,6 +180,12 @@ INSERT INTO `userstemp` (`id`, `email`, `firstname`, `lastname`, `password`, `to
 --
 
 --
+-- Indices de la tabla `descuentos`
+--
+ALTER TABLE `descuentos`
+  ADD PRIMARY KEY (`id`);
+
+--
 -- Indices de la tabla `historiapagos`
 --
 ALTER TABLE `historiapagos`
@@ -198,6 +224,12 @@ ALTER TABLE `userstemp`
 --
 -- AUTO_INCREMENT de las tablas volcadas
 --
+
+--
+-- AUTO_INCREMENT de la tabla `descuentos`
+--
+ALTER TABLE `descuentos`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
 
 --
 -- AUTO_INCREMENT de la tabla `historiapagos`

@@ -68,8 +68,8 @@
 			$this->execSql($query, Registers::One, $values);
 		}
 
-		public function getAll($query) {
-			$this->execSql($query, Registers::All);
+		public function getAll($query, array $values = []) {
+			$this->execSql($query, Registers::All, $values);
 		}
 
 		public function add($query, array $values) {

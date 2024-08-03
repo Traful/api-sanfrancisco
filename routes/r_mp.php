@@ -4,8 +4,10 @@
     
 	//use objects\Mp;
 	require_once("objects/mp.php");
+	require_once("objects/inscripciones.php");
     //use utils\Validate;
 	require_once("utils/validate.php");
+	
 
 	//[GET]
 
@@ -31,6 +33,51 @@
 	$app->get("/mp/historial/user/{id:[0-9]+}", function (Request $request, Response $response, array $args) {
 		$historial = new Mp($this->get("db"));
 		$resp = $historial->getHistorialByUser($args["id"])->getResult();
+		$response->getBody()->write(json_encode($resp));
+		return $response
+			->withHeader("Content-Type", "application/json")
+			->withStatus($resp->ok ? 200 : 409);
+	});
+
+	$app->get("/mp/success", function (Request $request, Response $response, array $args) {
+		$fields = $request->getQueryParams();
+
+		/*
+		var_dump($fields);
+		array(11) {
+			["collection_id"]=> string(11) "84063485259"
+			["collection_status"]=> string(8) "approved"
+			["payment_id"]=> string(11) "84063485259"
+			["status"]=> string(8) "approved"
+			["external_reference"]=> string(21) "hans success test - 2"
+			["payment_type"]=> string(13) "account_money"
+			["merchant_order_id"]=> string(11) "21392216305"
+			["preference_id"]=> string(47) "1922226487-e9d7fbb4-8362-43be-bbef-31eb277b790d" !!! <-Este es el ID del Item que se vendio [buscar en inscripciones y dar como pago!]
+			["site_id"]=> string(3) "MLA"
+			["processing_mode"]=> string(10) "aggregator"
+			["merchant_account_id"]=> string(4) "null"
+		}
+		*/
+
+		$fieldsString = print_r($fields, true);
+		$file = "archivos/success.txt";
+		file_put_contents($file, $fieldsString, FILE_APPEND);
+
+		$mp = new Mp($this->get("db"));
+		$resp = $mp->setNotificacion($fields)->getResult();;
+
+		if($fields["status"] === "approved") {
+			$ins = new Inscripciones($this->get("db"));
+			$resp = $ins->updatePaymentState($fields["preference_id"])->getResult();
+		}
+
+		/*
+		$resp = new stdClass();
+		$resp->ok = true;
+		$resp->msg = "";
+		$resp->data = null;
+		*/
+
 		$response->getBody()->write(json_encode($resp));
 		return $response
 			->withHeader("Content-Type", "application/json")
@@ -110,4 +157,5 @@
 			->withHeader("Content-Type", "application/json")
 			->withStatus($resp->ok ? 200 : 409);
 	});
+
 ?>

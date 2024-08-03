@@ -61,5 +61,5 @@
 			parent::getAll($query);
 			return $this;
 		}
-    }
+	}
 ?>
