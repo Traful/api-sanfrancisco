@@ -4,7 +4,7 @@
 use \Psr\Http\Message\ResponseInterface as Response;
 use \Psr\Http\Message\ServerRequestInterface as Request;
 use \Slim\Factory\AppFactory;
-
+use Ramsey\Uuid\Uuid;
 use MercadoPago\MercadoPagoConfig;
 use MercadoPago\Client\Preference\PreferenceClient;
 
@@ -102,17 +102,23 @@ $app->post("/registrar/evento", function (Request $request, Response $response, 
                 }
             }
 
-            $idPreferencia = "1";
+            $idPreferencia = null;
 
             if(!$cubierto) {
+                /*
                 MercadoPagoConfig::setAccessToken($_ENV["MP_ACCESS_TOKEN"]);
                 //Generar una nueva preferencia
                 $client = new PreferenceClient();
+                $uuid4 = Uuid::uuid4();
                 $preference = $client->create(
                     [
                         "items" => array(
                             array(
+                                "id" => $uuid4,
                                 "title" => $item->titulo,
+                                "description" => "",
+                                "picture_url" => "",
+                                "category_id" => "",
                                 "quantity" => $item->cantidad,
                                 "unit_price" => $importe,
                                 "currency_id" => "ARS"
@@ -125,10 +131,55 @@ $app->post("/registrar/evento", function (Request $request, Response $response, 
                     "failure" => "https://hans.net.ar/failure",
                     "pending" => "https://hans.net.ar/pending"
                 );
-                $preference->auto_return = "approved";
+                $preference->auto_return = "all";
+                $preference->external_reference = "asdad";
                 $preference->notification_url = "https://hans.net.ar/api-sanfrancisco/mp/notificaciones";
-
                 $idPreferencia = $preference->id;
+                */
+
+                $uuid4 = Uuid::uuid4();
+                $curl = curl_init();
+
+                curl_setopt_array($curl, array(
+                    CURLOPT_URL => 'https://api.mercadopago.com/checkout/preferences',
+                    CURLOPT_RETURNTRANSFER => true,
+                    CURLOPT_ENCODING => '',
+                    CURLOPT_MAXREDIRS => 10,
+                    CURLOPT_TIMEOUT => 0,
+                    CURLOPT_FOLLOWLOCATION => true,
+                    CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
+                    CURLOPT_CUSTOMREQUEST => 'POST',
+                    CURLOPT_POSTFIELDS =>'{
+                        "items": [
+                            {
+                                "id": "' . $uuid4 . '",
+                                "title": "' . $item->titulo . '",
+                                "description": "Dummy description Success 2",
+                                "picture_url": "http://www.myapp.com/myimage.jpg",
+                                "category_id": "car_electronics Success 2",
+                                "quantity": 1,
+                                "currency_id": "ARS",
+                                "unit_price": ' . $importe . '
+                            }
+                        ],
+                        "back_urls": {
+                            "success": "https://hans.net.ar/api-sanfrancisco/mp/success",
+                            "failure": "http://test.com/failure",
+                            "pending": "http://test.com/pending"
+                        },
+                        "auto_return": "all",
+                        "external_reference": "hans success test - 2",
+                        "notification_url": "https://hans.net.ar/api-sanfrancisco/mp/notificaciones"
+                    }',
+                    CURLOPT_HTTPHEADER => array(
+                        'Authorization: Bearer ' . $_ENV["MP_ACCESS_TOKEN"],
+                        'Content-Type: application/json'
+                    ),
+                ));
+                $responseCurl = curl_exec($curl);
+                curl_close($curl);
+                $responseCurl = json_decode($responseCurl);
+                $idPreferencia = $responseCurl->id;
             }
 
             $fields["idPago"] = $idPreferencia;

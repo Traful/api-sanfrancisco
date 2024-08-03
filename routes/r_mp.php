@@ -78,10 +78,14 @@
 		$resp->data = null;
 		*/
 
+		return $response->withHeader('Location', 'https://hans.net.ar/home')->withStatus(302);
+
+		/*
 		$response->getBody()->write(json_encode($resp));
 		return $response
 			->withHeader("Content-Type", "application/json")
 			->withStatus($resp->ok ? 200 : 409);
+		*/
 	});
 
 	//[POST]
