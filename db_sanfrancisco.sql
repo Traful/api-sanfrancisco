@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Servidor: 127.0.0.1:3306
--- Tiempo de generación: 03-08-2024 a las 22:28:22
+-- Tiempo de generación: 04-08-2024 a las 04:24:17
 -- Versión del servidor: 10.11.8-MariaDB-cll-lve
 -- Versión de PHP: 7.2.34
 
@@ -39,7 +39,7 @@ CREATE TABLE `descuentos` (
 --
 
 INSERT INTO `descuentos` (`id`, `codigo`, `disponibilidad`, `importe`) VALUES
-(1, 'desc', 3, 500);
+(1, 'desc', 92, 500);
 
 -- --------------------------------------------------------
 
@@ -95,39 +95,9 @@ CREATE TABLE `inscripciones` (
   `pagado` tinyint(1) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
--- --------------------------------------------------------
-
 --
--- Estructura de tabla para la tabla `items`
+-- Volcado de datos para la tabla `inscripciones`
 --
-
-CREATE TABLE `items` (
-  `id` int(11) NOT NULL,
-  `titulo` varchar(50) NOT NULL,
-  `cantidad` int(11) NOT NULL,
-  `precio` double NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
---
--- Volcado de datos para la tabla `items`
---
-
-INSERT INTO `items` (`id`, `titulo`, `cantidad`, `precio`) VALUES
-(1, 'Quiero correr los 5k', 1, 12000),
-(2, 'Quiero correr los 10k', 1, 15000);
-
--- --------------------------------------------------------
-
---
--- Estructura de tabla para la tabla `notificaciones`
---
-
-CREATE TABLE `notificaciones` (
-  `id` int(11) NOT NULL,
-  `fecha` date NOT NULL,
-  `hora` time NOT NULL,
-  `notificacion` text NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------
 
@@ -171,10 +141,6 @@ CREATE TABLE `userstemp` (
 -- Volcado de datos para la tabla `userstemp`
 --
 
-INSERT INTO `userstemp` (`id`, `email`, `firstname`, `lastname`, `password`, `token`, `fecha`) VALUES
-(13, 'juan@juan.com', 'Federico', 'Jaime', '$2y$10$iM4doTTIRHaCheoSd4Uc0.6H4VRLZXWBdlwiSBELHzhJdohGVFD3i', 'DYxrk96sTo', '2024-08-01'),
-(14, 'visorahomestudio@gmail.com', 'Pablo', '888', '$2y$10$n/wY98SnbOFcjXPdnusWZ.tBmCKKn19XjCCNlFqVpfFMboyOnWnYq', 'lbqrFCjgIM', '2024-08-01');
-
 --
 -- Índices para tablas volcadas
 --
@@ -183,7 +149,8 @@ INSERT INTO `userstemp` (`id`, `email`, `firstname`, `lastname`, `password`, `to
 -- Indices de la tabla `descuentos`
 --
 ALTER TABLE `descuentos`
-  ADD PRIMARY KEY (`id`);
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `codigo` (`codigo`);
 
 --
 -- Indices de la tabla `historiapagos`
@@ -241,7 +208,7 @@ ALTER TABLE `historiapagos`
 -- AUTO_INCREMENT de la tabla `inscripciones`
 --
 ALTER TABLE `inscripciones`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
 
 --
 -- AUTO_INCREMENT de la tabla `items`
@@ -253,7 +220,7 @@ ALTER TABLE `items`
 -- AUTO_INCREMENT de la tabla `notificaciones`
 --
 ALTER TABLE `notificaciones`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=32;
 
 --
 -- AUTO_INCREMENT de la tabla `users`
