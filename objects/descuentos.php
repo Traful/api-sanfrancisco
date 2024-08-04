@@ -12,6 +12,12 @@
 			parent::__construct($db);
 		}
 
+		public function getDescuentos($limit =  10) {
+			$query = "SELECT * FROM $this->table_name ORDER BY id DESC LIMIT 0, $limit";
+			parent::getAll($query);
+			return $this;
+		}
+
 		public function getDescuentoByCodigo($codigo, $onlyUnUsed = false) {
 			$query = "SELECT * FROM $this->table_name WHERE codigo = :codigo";
 			if($onlyUnUsed) {
@@ -24,6 +30,12 @@
 		public function descontarDisponibilidad($codigo, $cantidad =  1) {
 			$query = "UPDATE $this->table_name SET disponibilidad = (disponibilidad - $cantidad ) WHERE codigo = :codigo";
 			parent::update($query, ["codigo" => $codigo]);
+			return $this;
+		}
+
+		public function setDescuento($values) {
+			$query = "INSERT INTO $this->table_name SET codigo = :codigo, disponibilidad = :disponibilidad, importe = :importe";
+			parent::add($query, $values);
 			return $this;
 		}
 	}

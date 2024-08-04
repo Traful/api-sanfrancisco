@@ -97,6 +97,7 @@ require_once("routes/r_mercadopago.php");
 require_once("routes/r_mp.php");
 require_once("routes/r_estadisticas.php");
 require_once("routes/r_inscripciones.php");
+require_once("routes/r_descuentos.php");
 
 $app->map(["GET", "POST", "PUT", "DELETE", "PATCH"], "/{routes:.+}", function ($request, $response) {
 	throw new HttpNotFoundException($request);
