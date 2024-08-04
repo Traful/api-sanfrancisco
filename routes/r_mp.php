@@ -87,10 +87,11 @@
 			</html>
 			EOD;
 
-			sendMail($email, $nombre, $subject, $body, $alt = "");
+			return sendMail($email, $nombre, $subject, $body, $alt = "");
 		} catch (\Throwable $th) {
 			//throw $th;
 		}
+		return false;
 	};
 	
 
@@ -144,7 +145,7 @@ $app->get("/mp/success", function (Request $request, Response $response, array $
 		$resp->data = null;
 		*/
 
-		return $response->withHeader("Location", "https://vivisanfrancisco.com/tickets/mis_inscripciones")->withStatus(302);
+		return $response->withHeader("Location", "https://vivisanfrancisco.com/tickets/mis_inscripciones?estado=1")->withStatus(302);
 
 		/*
 		$response->getBody()->write(json_encode($resp));
