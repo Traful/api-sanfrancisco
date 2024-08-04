@@ -164,8 +164,8 @@ $app->post("/registrar/evento", function (Request $request, Response $response, 
                         ],
                         "back_urls": {
                             "success": "https://hans.net.ar/api-sanfrancisco/mp/success",
-                            "failure": "http://test.com/failure",
-                            "pending": "http://test.com/pending"
+                            "failure": "https://hans.net.ar/fallo-pago",
+                            "pending": "https://hans.net.ar/pendiente-pago"
                         },
                         "auto_return": "all",
                         "external_reference": "hans success test - 2",
