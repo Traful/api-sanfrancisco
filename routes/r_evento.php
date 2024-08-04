@@ -163,13 +163,13 @@ $app->post("/registrar/evento", function (Request $request, Response $response, 
                             }
                         ],
                         "back_urls": {
-                            "success": "https://hans.net.ar/api-sanfrancisco/mp/success",
-                            "failure": "http://test.com/failure",
-                            "pending": "http://test.com/pending"
+                            "success": "https://vivisanfrancisco.com/api-sanfrancisco/mp/success",
+                            "failure": "https://vivisanfrancisco.com/ticket/fallo-pago",
+                            "pending": "https://vivisanfrancisco.com/ticket/pendiente-pago"
                         },
                         "auto_return": "all",
                         "external_reference": "hans success test - 2",
-                        "notification_url": "https://hans.net.ar/api-sanfrancisco/mp/notificaciones"
+                        "notification_url": "https://vivisanfrancisco.com/api-sanfrancisco/mp/notificaciones"
                     }',
                     CURLOPT_HTTPHEADER => array(
                         'Authorization: Bearer ' . $_ENV["MP_ACCESS_TOKEN"],
@@ -245,6 +245,7 @@ $app->put("/inscripcion/pago/{idIncripto}", function (Request $request, Response
         throw new Exception("Error al ejecutar la consulta");
     }
 });
+
 
 
 $app->get("/ver/archivo/{id}", function (Request $request, Response $response, array $args) {

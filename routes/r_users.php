@@ -37,7 +37,7 @@ function sendTokenRegister($email, $nombre, $token)
 
 		// Content
 		$urlLink = $_ENV["APP_URL"] . "register/token/" . $token;
-		$logoUrl = $_ENV["APP_URL"] . "assets/images/logo_municipalidad.png"; // Asegúrate de tener esta imagen
+		$logoUrl = "https://vivisanfrancisco.com/ticket/assets/logonegro-DXNK33qQ.png"; // Asegúrate de tener esta imagen
 
 		$mail->isHTML(true);
 		$mail->Subject = "Bienvenido al Sistema de Tickets de San Francisco del Monte de Oro";
@@ -59,7 +59,7 @@ function sendTokenRegister($email, $nombre, $token)
 			<div class="container">
 				<div class="header">
 					<img src="{$logoUrl}" alt="Logo Municipalidad de San Francisco" class="logo">
-					<h1>Bienvenido al Sistema de Tickets 10K</h1>
+					<h1>Bienvenido al Sistema de Ticket para la carrera de 10K</h1>
 				</div>
 				<p>Estimado/a <strong>{$nombre}</strong>.</p>
 				<p>Le damos la más cordial bienvenida al Sistema de Tickets 10K de la Municipalidad de San Francisco. Estamos encantados de que se una a nuestra plataforma.</p>
