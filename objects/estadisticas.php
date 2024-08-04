@@ -13,14 +13,14 @@
 		}
 		public function getEstadisticasTotalInscriptos() {
 			// Total de inscriptos
-			$query = "SELECT COUNT(*) AS cantidad FROM $this->table_name WHERE idItem IS NOT NULL AND idPago IS NOT NULL";
+			$query = "SELECT COUNT(*) AS cantidad FROM $this->table_name WHERE pagado = 1";
 			parent::getOne($query);
 			return $this;
 		}
 
 		public function getEstadisticasByGeneros() {
 			// Cantidades por genero
-			$query = "SELECT genero, COUNT(*) AS cantidad FROM $this->table_name WHERE idItem IS NOT NULL AND idPago IS NOT NULL GROUP BY genero";
+			$query = "SELECT genero, COUNT(*) AS cantidad FROM $this->table_name WHERE pagado = 1 GROUP BY genero";
 			parent::getAll($query);
 			return $this;
 		}
@@ -29,20 +29,21 @@
 			// Items (tipo de carrera/producto que se vende)
 			$query = <<<EOD
 			SELECT
-				C1.*,
-				items.*
+				items.titulo,
+				C1.cantidad,
+				C1.recaudado
 			FROM (
 				SELECT
 					idItem,
-					COUNT(*) AS cantidad
-				FROM {$this->table_name}
+					COUNT(*) AS cantidad,
+					SUM(importe) AS recaudado
+				FROM $this->table_name
 				WHERE
-					idItem IS NOT NULL
-					AND idPago IS NOT NULL
+					pagado = 1
 				GROUP BY idItem
 			) C1
 			INNER JOIN items ON
-				items.id = c1.idItem
+				items.id = C1.idItem
 			EOD;
 			parent::getAll($query);
 			return $this;
@@ -50,14 +51,14 @@
 
 		public function getEstadisticasByEdades() {
 			// Categorías/Edad
-			$query = "SELECT categoria_edad, COUNT(*) AS cantidad FROM $this->table_name WHERE idItem IS NOT NULL AND idPago IS NOT NULL GROUP BY categoria_edad";
+			$query = "SELECT categoria_edad, COUNT(*) AS cantidad FROM $this->table_name  WHERE pagado = 1 GROUP BY categoria_edad";
 			parent::getAll($query);
 			return $this;
 		}
 
 		public function getEstadisticasByTalles() {
 			// Talles de Remera
-			$query = "SELECT talle_remera, COUNT(*) AS cantidad FROM $this->table_name WHERE idItem IS NOT NULL AND idPago IS NOT NULL GROUP BY talle_remera";
+			$query = "SELECT talle_remera, COUNT(*) AS cantidad FROM $this->table_name  WHERE pagado = 1 GROUP BY talle_remera";
 			parent::getAll($query);
 			return $this;
 		}

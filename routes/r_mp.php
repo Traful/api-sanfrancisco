@@ -78,7 +78,7 @@
 		$resp->data = null;
 		*/
 
-		return $response->withHeader('Location', 'https://hans.net.ar/home')->withStatus(302);
+		return $response->withHeader("Location", "https://hans.net.ar/mis_inscripciones")->withStatus(302);
 
 		/*
 		$response->getBody()->write(json_encode($resp));
