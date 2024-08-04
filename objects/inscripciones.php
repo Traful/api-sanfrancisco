@@ -40,8 +40,8 @@
 
 		public function getInscripcionesByUser($user) {
 			// Categorías/Edad
-			$query = "SELECT * FROM inscripciones WHERE usuario_id = :idx";
-			parent::getAll($query, ["idx" => $user]);
+			$query = "SELECT id, usuario_id, dni, nombre, apellido, fecha_nacimiento, genero, email, telefono, domicilio, ciudad, provincia, pais, codigo_postal, contacto_emergencia_nombre, contacto_emergencia_apellido, contacto_emergencia_telefono, talle_remera, team_agrupacion, categoria_edad, codigo_descuento, tipo_mime, nombre_archivo, acepta_promocion, idItem, idPago FROM inscripciones WHERE usuario_id = :idx";
+ 			parent::getAll($query, ["idx" => $user]);
 			return $this;
 		}
 	}
