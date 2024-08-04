@@ -14,20 +14,26 @@ $dotenv = Dotenv\Dotenv::createImmutable(__DIR__);
 $dotenv->load();
 
 $container->set("db", function () {
-	/*
+
 	$con = array(
 		"host" => "localhost",
 		"dbname" => "db_sanfrancisco",
 		"user" => "root",
 		"pass" => ""
 	);
-	*/
-	$con = array(
+
+	/*$con = array(
 		"host" => "srv448.hstgr.io",
 		"dbname" => "u823308621_mp",
 		"user" => "u823308621_hansjal",
 		"pass" => "p35.*&C5XgV_Z*B"
 	);
+	$con = array(
+		"host" => "localhost",
+		"dbname" => "c2640433_db_sf",
+		"user" => "c2640433_bd",
+		"pass" => "dinipaTU88"
+	);*/
 	$pdo = new PDO("mysql:host=" . $con["host"] . ";dbname=" . $con["dbname"], $con["user"], $con["pass"], array(PDO::MYSQL_ATTR_INIT_COMMAND => "SET NAMES utf8"));
 	$pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 	//$pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_WARNING);
@@ -57,6 +63,8 @@ $app->add(new \Tuupola\Middleware\JwtAuthentication([
 		"/" . basename(dirname($_SERVER["PHP_SELF"])) . "/mp/notificaciones",
 		"/" . basename(dirname($_SERVER["PHP_SELF"])) . "/mp/success",
 		"/" . basename(dirname($_SERVER["PHP_SELF"])) . "/estadisticas",
+		"/" . basename(dirname($_SERVER["PHP_SELF"])) . "/descuentos",
+
 		// -> esta ruta no está ignorada pero pasa igual, error!!!: /user/register/temp/{token}
 	],
 	"secret" => $_ENV["JWT_SECRET_KEY"],
