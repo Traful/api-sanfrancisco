@@ -51,6 +51,12 @@
 			return $this;
 		}
 
+		public function getInscripcionesByIdPago($idPago) {
+			$query = "SELECT id, usuario_id, dni, nombre, apellido, fecha_nacimiento, genero, email, telefono, domicilio, ciudad, provincia, pais, codigo_postal, contacto_emergencia_nombre, contacto_emergencia_apellido, contacto_emergencia_telefono, talle_remera, team_agrupacion, categoria_edad, codigo_descuento, tipo_mime, nombre_archivo, acepta_promocion, idItem, idPago FROM $this->table_name WHERE idPago = :idPago";
+ 			parent::getOne($query, ["idPago" => $idPago]);
+			return $this;
+		}
+
 		public function setEntregaRemera($id) {
 			$query = "UPDATE $this->table_name SET rEntregada = !rEntregada WHERE id = :id";
  			parent::update($query, ["id" => $id]);
