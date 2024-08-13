@@ -73,15 +73,15 @@ $app->post("/registrar/evento", function (Request $request, Response $response, 
             $descuentoData->codigo = "";
 
             //Buscar si tiene algun descuento
-            if(trim($fields["codigo_descuento"]) !== "") {
+            if (trim($fields["codigo_descuento"]) !== "") {
                 $codigo = trim($fields["codigo_descuento"]);
                 $des = new Descuentos($db);
                 $descuento = $des->getDescuentoByCodigo($codigo, true)->getResult();
-                if(!is_null($descuento->data) && ($descuento->data !== false)) {
+                if (!is_null($descuento->data) && ($descuento->data !== false)) {
                     $descuento = $descuento->data;
                     $importeDescuento = floatval($descuento->importe);
                     $importe = $importe - $importeDescuento; //Se aplica el descuento a la preferencia
-                    if($importe === 0) {
+                    if ($importe === 0) {
                         $cubierto = true;
                     }
                     $descuentoData->realizado = true;
@@ -104,7 +104,7 @@ $app->post("/registrar/evento", function (Request $request, Response $response, 
 
             $idPreferencia = null;
 
-            if(!$cubierto) {
+            if (!$cubierto) {
                 /*
                 MercadoPagoConfig::setAccessToken($_ENV["MP_ACCESS_TOKEN"]);
                 //Generar una nueva preferencia
@@ -145,32 +145,33 @@ $app->post("/registrar/evento", function (Request $request, Response $response, 
                     CURLOPT_RETURNTRANSFER => true,
                     CURLOPT_ENCODING => '',
                     CURLOPT_MAXREDIRS => 10,
-                    CURLOPT_TIMEOUT => 0,
+                    CURLOPT_TIMEOUT => 10,
                     CURLOPT_FOLLOWLOCATION => true,
                     CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
                     CURLOPT_CUSTOMREQUEST => 'POST',
-                    CURLOPT_POSTFIELDS =>'{
+                    CURLOPT_POSTFIELDS => '{
                         "items": [
                             {
                                 "id": "' . $uuid4 . '",
                                 "title": "' . $item->titulo . '",
-                                "description": "Dummy description Success 2",
-                                "picture_url": "http://www.myapp.com/myimage.jpg",
-                                "category_id": "car_electronics Success 2",
+                                "description": "10K Del Maestro",
+                                "picture_url": "https://vivisanfrancisco.com/ticket/assets/images/correr.jpg",
+                                "category_id": "Ticket de Carrera",
                                 "quantity": 1,
                                 "currency_id": "ARS",
                                 "unit_price": ' . $importe . '
                             }
                         ],
                         "back_urls": {
-                            "success": "https://vivisanfrancisco.com/api-sanfrancisco/mp/success",
+                            "success": "https://vivisanfrancisco.com/ticket/inscripcion-exito",
                             "failure": "https://vivisanfrancisco.com/ticket/fallo-pago",
                             "pending": "https://vivisanfrancisco.com/ticket/pendiente-pago"
                         },
                         "auto_return": "all",
-                        "external_reference": "hans success test - 2",
+                        "external_reference": "' . $item->titulo . '",
                         "notification_url": "https://vivisanfrancisco.com/api-sanfrancisco/mp/notificaciones"
-                    }',
+                        
+                            }',
                     CURLOPT_HTTPHEADER => array(
                         'Authorization: Bearer ' . $_ENV["MP_ACCESS_TOKEN"],
                         'Content-Type: application/json'
@@ -190,9 +191,9 @@ $app->post("/registrar/evento", function (Request $request, Response $response, 
             $fields["certificado_medico"] = null;
             $fields["nombre_archivo"] = null;
             $fields["tipo_mime"] = null;
-            
-            if(isset($uploadedFiles["certificado_medico"])) {
-                if($uploadedFiles["certificado_medico"]->getError() === UPLOAD_ERR_OK) {
+
+            if (isset($uploadedFiles["certificado_medico"])) {
+                if ($uploadedFiles["certificado_medico"]->getError() === UPLOAD_ERR_OK) {
                     $certificado_medico = $uploadedFiles["certificado_medico"]->getStream()->getContents();
                     $fields["certificado_medico"] = $certificado_medico;
                     $name_archive = $uploadedFiles["certificado_medico"]->getClientFilename();
@@ -207,11 +208,10 @@ $app->post("/registrar/evento", function (Request $request, Response $response, 
             $resp->data["idPreferencia"] = $idPreferencia;
 
             //Si la inscripción se realiza correctamente y se utilizo un descuento se actualzia su uso
-            if($descuentoData->realizado === true) {
+            if ($descuentoData->realizado === true) {
                 $des = new Descuentos($db);
                 $des->descontarDisponibilidad($descuentoData->codigo);
             }
-            
         } catch (Exception $e) {
             $resp->ok = false;
             $resp->msg = $e->getMessage();

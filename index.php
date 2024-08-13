@@ -21,15 +21,15 @@ $container->set("db", function () {
 		"user" => "root",
 		"pass" => ""
 	);
-
-	/*$con = array(
+	/*
+	$con = array(
 		"host" => "srv448.hstgr.io",
 		"dbname" => "u823308621_mp",
 		"user" => "u823308621_hansjal",
 		"pass" => "p35.*&C5XgV_Z*B"
 	);
-	$con = array(
-		"host" => "localhost",
+	$con = array( 
+		"host" => "localhost", 
 		"dbname" => "c2640433_db_sf",
 		"user" => "c2640433_bd",
 		"pass" => "dinipaTU88"
