@@ -7,7 +7,8 @@ use MercadoPago\Client\Preference\PreferenceClient;
 use \Psr\Http\Message\ResponseInterface as Response;
 use \Psr\Http\Message\ServerRequestInterface as Request;
 // Agrega credenciales
-MercadoPagoConfig::setAccessToken("APP_USR-8805034183291465-072923-c1787b979d0bbe1e4c4a10b16b50326f-1924207390");
+MercadoPagoConfig::setAccessToken("APP_USR-8505443836508508-080507-0883eaa60c8f06aa2a1e9c91c9ff5964-1926827544");
+//credencial dev  MercadoPagoConfig::setAccessToken("APP_USR-8805034183291465-072923-c1787b979d0bbe1e4c4a10b16b50326f-1924207390");
 
 $app->get("/mercadopago/item", function (Request $request, Response $response, array $args) {
 
@@ -77,7 +78,7 @@ $app->post("/mercadopago/success", function (Request $request, Response $respons
         fclose($file);
     } else {
         // Manejar el error si no se puede abrir el archivo
-        echo("No se pudo abrir el archivo para escritura: $filePath");
+        echo ("No se pudo abrir el archivo para escritura: $filePath");
     }
 
     return $response->withStatus(200);
