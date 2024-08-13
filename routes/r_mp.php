@@ -207,7 +207,19 @@ $app->post("/mp/procesar/pago", function (Request $request, Response $response, 
 });
 
 $app->post("/mp/notificaciones", function (Request $request, Response $response, array $args) {
+	$resp = new \stdClass();
+	$resp->ok = true;
+	$resp->msg = "";
+	$resp->data = null;
+
 	$fields = $request->getParsedBody();
+
+	if(isset($fields["status"]) && isset($fields["preference_id"]) && ($fields["status"] === "approved")) {
+		$ins = new Inscripciones($this->get("db"));
+		$inscripcion = $ins->updatePaymentState($fields["preference_id"])->getResult();
+		$resp = $inscripcion;
+		$resp->msg = "Pago actualizado.";
+	}
 
 	$fieldsString = print_r($fields, true);
 	$file = "archivos/notificaciones.txt";
@@ -215,13 +227,6 @@ $app->post("/mp/notificaciones", function (Request $request, Response $response,
 
 	$mp = new Mp($this->get("db"));
 	$resp = $mp->setNotificacion($fields)->getResult();
-
-	/*
-		$resp = new stdClass();
-		$resp->ok = true;
-		$resp->msg = "";
-		$resp->data = null;
-		*/
 
 	$response->getBody()->write(json_encode($resp));
 	return $response
