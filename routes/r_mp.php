@@ -256,6 +256,7 @@ $app->post("/mp/notificaciones", function (Request $request, Response $response,
 
 	$fields = $request->getParsedBody();
 
+	//Bla Bla Bla
 	if(isset($fields["status"]) && isset($fields["preference_id"]) && ($fields["status"] === "approved")) {
 		$ins = new Inscripciones($this->get("db"));
 		$inscripcion = $ins->updatePaymentState($fields["preference_id"])->getResult();
