@@ -145,21 +145,25 @@ $app->get("/user/{id:[0-9]+}", function (Request $request, Response $response, a
 });
 
 $app->get("/user/register/temp/{token}", function (Request $request, Response $response, array $args) {
-	$resp = new \stdClass();
-	$users = new Users($this->get("db"));
-	$resp = $users->getUserTemp($args["token"])->getResult();
-	if (isset($resp->data->id)) {
-		$id = $resp->data->id;
-		$resp = $users->moveTempUser($id)->getResult();
-	} else {
-		$resp->ok = false;
-		$resp->msg = "El token [" . $args["token"] . "] no es válido.";
-		$resp->data = false;
-	}
-	$response->getBody()->write(json_encode($resp));
-	return $response
-		->withHeader("Content-Type", "application/json")
-		->withStatus($resp->ok ? 200 : 409);
+    $resp = new \stdClass();
+    $users = new Users($this->get("db"));
+    $result = $users->getUserTemp($args["token"])->getResult();
+    
+    if (isset($result->data->id)) {
+        $id = $result->data->id;
+        $resp = $users->moveTempUser($id)->getResult();
+        $status = 200;
+    } else {
+        $resp->ok = false;
+        $resp->msg = "El token [" . $args["token"] . "] no es válido.";
+        $resp->data = false;
+        $status = 401;  // Cambia el status a 401 si el token no es válido
+    }
+    
+    $response->getBody()->write(json_encode($resp));
+    return $response
+        ->withHeader("Content-Type", "application/json")
+        ->withStatus($status);  // Devolver el estado adecuado
 });
 
 $app->get("/user/password/temp/{token}", function (Request $request, Response $response, array $args) {
@@ -279,8 +283,8 @@ $app->post("/user/login", function (Request $request, Response $response, array 
 		$users = new Users($this->get("db"));
 		$existe = $users->userExist($fields["email"]);
 		if ($existe && password_verify($fields["password"], $existe->password)) {
-			$iss = "http://hansjal.com";
-			$aud = "http://hansjal.com";
+			$iss = "https://vivisanfrancisco.com";
+			$aud = "https://vivisanfrancisco.com";
 			$iat = time();
 			$exp = $iat + (3600 * 2); // Expire (2Hs)
 			$nbf = $iat;

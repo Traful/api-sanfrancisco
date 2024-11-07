@@ -69,4 +69,55 @@ class Estadisticas extends Base
 		parent::getAll($query);
 		return $this;
 	}
+
+	public function getEstadisticasByTipoInscripcion()
+	{
+		// Asumiendo que tienes un campo 'tipo_inscripcion' en tu tabla
+		$query = "SELECT tipo_inscripcion, COUNT(*) AS cantidad FROM $this->table_name WHERE pagado = 1 GROUP BY tipo_inscripcion";
+		parent::getAll($query);
+		return $this;
+	}
+	public function getListadoInscritos()
+	{
+		// Obtener listado general de inscritos
+		$query = "
+            SELECT 
+                id, nombre, apellido, dni, email, telefono, tipo_inscripcion, categoria_edad 
+            FROM 
+                $this->table_name
+            WHERE 
+                pagado = 1
+        ";
+		parent::getAll($query);
+		return $this;
+	}
+
+	public function getInscritoPorDni($dni)
+	{
+		$query = "
+		SELECT 
+			id, usuario_id, dni, nombre, apellido, fecha_nacimiento, genero, email, telefono, domicilio, ciudad, provincia, pais, codigo_postal, 
+			contacto_emergencia_nombre, contacto_emergencia_apellido, contacto_emergencia_telefono, talle_remera, team_agrupacion, categoria_edad, 
+			codigo_descuento, tipo_inscripcion, tipo_discapacidad, idItem, importe, pagado, rEntregada, 
+			certificado_medico, certificado_discapacidad, tipo_mime, tipo_mime_discapacidad, nombre_archivo, nombre_archivo_discapacidad 
+		FROM 
+			$this->table_name
+		WHERE 
+			dni = ?
+		";
+
+		$result = parent::getOne($query, [$dni]);
+
+		if ($result) {
+			// Codificar los certificados como base64 para enviarlos correctamente
+			if ($result['certificado_medico']) {
+				$result['certificado_medico'] = base64_encode($result['certificado_medico']);
+			}
+			if ($result['certificado_discapacidad']) {
+				$result['certificado_discapacidad'] = base64_encode($result['certificado_discapacidad']);
+			}
+		}
+
+		return $result;
+	}
 }

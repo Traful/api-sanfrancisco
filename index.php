@@ -64,6 +64,7 @@ $app->add(new \Tuupola\Middleware\JwtAuthentication([
 		"/" . basename(dirname($_SERVER["PHP_SELF"])) . "/mp/success",
 		"/" . basename(dirname($_SERVER["PHP_SELF"])) . "/estadisticas",
 		"/" . basename(dirname($_SERVER["PHP_SELF"])) . "/descuentos",
+		"/" . basename(dirname($_SERVER["PHP_SELF"])) . "/inscritos",
 
 		// -> esta ruta no está ignorada pero pasa igual, error!!!: /user/register/temp/{token}
 	],
