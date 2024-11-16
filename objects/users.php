@@ -17,14 +17,16 @@ class Users extends Base
 
 	public function getUsers()
 	{
-		$query = "SELECT id, email, firstname, lastname FROM $this->table_name ORDER BY id";
+		$query = "SELECT id, email, firstname, lastname, google_id FROM $this->table_name ORDER BY id";
 		parent::getAll($query);
 		return $this;
 	}
 
 	public function getUser($id)
 	{
-		$query = "SELECT id, email, firstname, lastname FROM $this->table_name WHERE id = :id";
+		$query = "SELECT id, email, firstname, lastname, tipoUser, google_id 
+				 FROM $this->table_name 
+				 WHERE id = :id";
 		parent::getOne($query, ["id" => $id]);
 		return $this;
 	}
@@ -61,19 +63,19 @@ class Users extends Base
 	public function moveTempUser($id)
 	{
 		$query = <<<EOD
-			INSERT INTO users (email, firstname, lastname, password)
-			SELECT
-				ut.email,
-				ut.firstname,
-				ut.lastname,
-				ut.password
-			FROM userstemp ut
-			WHERE
-				ut.id = :id AND
-				NOT EXISTS (
-					SELECT 1 FROM users e WHERE e.email = ut.email
-				);
-			EOD;
+            INSERT INTO users (email, firstname, lastname, password)
+            SELECT
+                ut.email,
+                ut.firstname,
+                ut.lastname,
+                ut.password
+            FROM userstemp ut
+            WHERE
+                ut.id = :id AND
+                NOT EXISTS (
+                    SELECT 1 FROM users e WHERE e.email = ut.email
+                );
+            EOD;
 		parent::add($query, ["id" => $id]);
 		if (parent::getResult()->ok) {
 			$query = "DELETE FROM userstemp WHERE id = :id";
@@ -84,7 +86,12 @@ class Users extends Base
 
 	public function setUser($values)
 	{
-		$query = "INSERT INTO $this->table_name SET email = :email, firstname = :firstname, lastname = :lastname, password = :password";
+		$query = "INSERT INTO $this->table_name SET 
+                  email = :email, 
+                  firstname = :firstname, 
+                  lastname = :lastname, 
+                  password = :password,
+                  created_at = NOW()";
 		$values["password"] = password_hash($values["password"], PASSWORD_BCRYPT);
 		parent::add($query, $values);
 		return $this;
@@ -92,7 +99,11 @@ class Users extends Base
 
 	public function updateUser($values)
 	{
-		$query = "INSERT INTO $this->table_name SET email = :email, firstname = :firstname, lastname = :lastname, password = :password WHERE id = :id";
+		$query = "UPDATE $this->table_name SET 
+                  email = :email, 
+                  firstname = :firstname, 
+                  lastname = :lastname 
+                  WHERE id = :id";
 		parent::update($query, $values);
 		return $this;
 	}
@@ -117,8 +128,15 @@ class Users extends Base
 
 	public function setRegister($values)
 	{
-		$query = "INSERT INTO userstemp SET email = :email, firstname = :firstname, lastname = :lastname, password = :password, token = :token, fecha = '" . date("Y-m-d") . "'";
+		$query = "INSERT INTO userstemp SET 
+                  email = :email, 
+                  firstname = :firstname, 
+                  lastname = :lastname, 
+                  password = :password, 
+                  token = :token, 
+                  fecha = :fecha";
 		$values["password"] = password_hash($values["password"], PASSWORD_BCRYPT);
+		$values["fecha"] = date("Y-m-d");
 		parent::add($query, $values);
 		return $this;
 	}
@@ -128,7 +146,11 @@ class Users extends Base
 		$resp = new \stdClass();
 		$existe = $this->userExist($values["email"]);
 		if ($existe) {
-			$query = "INSERT INTO passrecovery SET iduser = :iduser, email = :email, token = :token, fecha = :fecha";
+			$query = "INSERT INTO passrecovery SET 
+                      iduser = :iduser, 
+                      email = :email, 
+                      token = :token, 
+                      fecha = :fecha";
 			$data = [
 				"iduser" => $existe->id,
 				"email" => $existe->email,
@@ -156,5 +178,89 @@ class Users extends Base
 			$resp->errores = [];
 		}
 		return $resp;
+	}
+
+	public function findOrCreateGoogleUser($values)
+	{
+		try {
+			// Buscar usuario existente por google_id o email
+			$query = "SELECT id, email, firstname, lastname, google_id, tipoUser 
+                     FROM {$this->table_name} 
+                     WHERE google_id = :google_id OR email = :email 
+                     LIMIT 1";
+
+			parent::getOne($query, [
+				"google_id" => $values["googleId"],
+				"email" => $values["email"]
+			]);
+
+			$result = parent::getResult();
+
+			if ($result->ok && $result->data) {
+				// Usuario existe, actualizar datos
+				$query = "UPDATE {$this->table_name} SET 
+                         google_id = :google_id,
+                         firstname = :firstname,
+                         lastname = :lastname,
+                         tipoUser = :tipoUser
+                         WHERE id = :id";
+
+				parent::update($query, [
+					"id" => $result->data->id,
+					"google_id" => $values["googleId"],
+					"firstname" => $values["firstname"],
+					"lastname" => $values["lastname"],
+					"tipoUser" => $result->data->tipoUser ?? 0
+				]);
+			} else {
+				// Crear nuevo usuario
+				$query = "INSERT INTO {$this->table_name} 
+                         (email, firstname, lastname, google_id, tipoUser, password) 
+                         VALUES 
+                         (:email, :firstname, :lastname, :google_id, :tipoUser, :password)";
+
+				parent::add($query, [
+					"email" => $values["email"],
+					"firstname" => $values["firstname"],
+					"lastname" => $values["lastname"],
+					"google_id" => $values["googleId"],
+					"tipoUser" => 0,
+					"password" => null
+				]);
+
+				$insertResult = parent::getResult();
+				if (!$insertResult->ok) {
+					throw new \Exception("Error al crear nuevo usuario");
+				}
+
+				// Obtener el usuario recién creado
+				$query = "SELECT id, email, firstname, lastname, google_id, tipoUser 
+                         FROM {$this->table_name} 
+                         WHERE id = :id";
+				parent::getOne($query, ["id" => $insertResult->data["newId"]]);
+			}
+
+			return parent::getResult();
+		} catch (\Exception $e) {
+			error_log("Error en findOrCreateGoogleUser: " . $e->getMessage());
+			$resp = new \stdClass();
+			$resp->ok = false;
+			$resp->msg = "Error procesando usuario de Google: " . $e->getMessage();
+			$resp->data = null;
+			return $resp;
+		}
+	}
+
+	// Modificar también el método getResult en la clase Base si es necesario
+	public function getResult()
+	{
+		return $this->result;
+	}
+
+	// Método auxiliar para actualizar último login
+	private function updateLastLogin($userId)
+	{
+		$query = "UPDATE $this->table_name SET last_login = NOW() WHERE id = :id";
+		return parent::update($query, ["id" => $userId]);
 	}
 }

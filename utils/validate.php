@@ -26,7 +26,10 @@
 			foreach($verificaciones as $key => $rules) {
 				//if(!isset($valores->{$key})) {
 				if(!property_exists($valores, $key)) {
-					$this->errors[] = "{$key} es un valor requerido.";
+					// Solo agregar error si el campo no es opcional
+					if (!isset($rules['optional']) || $rules['optional'] !== true) {
+						$this->errors[] = "{$key} es un valor requerido.";
+					}
 				} else {
 					$v = $valores->{$key};
 					$last_type = null;
@@ -61,6 +64,16 @@
 									case "array":
 										if(!is_array($v)) {
 											$this->errors[] = "{$key} no es un array válido.";
+										}
+										break;
+									case "google_id":
+										if(!is_string($v) || strlen($v) < 5) {
+											$this->errors[] = "{$key} [$v] no es un ID de Google válido.";
+										}
+										break;
+									case "social_provider":
+										if(!in_array($v, ['google', 'facebook', 'apple'])) {
+											$this->errors[] = "{$key} [$v] no es un proveedor social válido.";
 										}
 										break;
 									default:
@@ -99,6 +112,11 @@
 											$this->errors[] = "{$key} debe tener al menos {$value} item/s.";
 										}
 										break;
+									case "google_id":
+										if(strlen($v) < $value) {
+											$this->errors[] = "{$key} debe tener al menos {$value} caracteres.";
+										}
+										break;
 									default:
 										break;
 								}
@@ -132,6 +150,11 @@
 									case "array":
 										if(count($v) > $value) {
 											$this->errors[] = "{$key} debe tener como máximo {$value} item/s.";
+										}
+										break;
+									case "google_id":
+										if(strlen($v) > $value) {
+											$this->errors[] = "{$key} no debe exceder {$value} caracteres.";
 										}
 										break;
 									default:
@@ -186,6 +209,9 @@
 								} else {
 									$this->errors[] = "No se ha especificado para la regla {$rule} una conexión a DB válida.";
 								}
+								break;
+							case "optional":
+								// No hacer nada, es solo un flag
 								break;
 							default:
 								$this->errors[] = "{$rule} no es una regla válida.";

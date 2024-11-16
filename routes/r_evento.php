@@ -291,7 +291,7 @@ $app->put("/inscripcion/pago/{idIncripto}", function (Request $request, Response
     $db = $this->get("db");
     $fields = $request->getParsedBody();
 
-    $query = "UPDATE incripciones SET idItem = :idItem, idPago = :idPago WHERE id = :id";
+    $query = "UPDATE inscripciones SET idItem = :idItem, idPago = :idPago WHERE id = :id";
     $stmt = $db->prepare($query);
 
     $stmt->bindParam(":idItem", $fields["idItem"]);
